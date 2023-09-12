@@ -1,5 +1,21 @@
 import cv2
 import numpy as np
+import openai
+
+# Configure sua chave de API da OpenAI
+openai.api_key = "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"
+
+# Função para obter uma resposta do chat GPT
+def obter_resposta_gpt(pergunta):
+    resposta = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "Suponha que você é um instrutor de Python."},
+            {"role": "user", "content": pergunta},
+        ],
+        temperature=0.7,
+    )
+    return resposta['choices'][0]['message']['content']
 
 # Tons de pele em dicionario conforme valores utilizados na escala de Taylor Hyperpigmentation
 dicionario_cores = {
@@ -41,13 +57,13 @@ def encontrar_tom_de_pele(imagem):
     # Encontra o índice da cor mais próxima
     indice_tom_pele = np.argmin(distancias)
 
-    # Obtém o nome do tom de pele correspondente
-    tom_pele = list(dicionario_cores.keys())[indice_tom_pele]
+    # Obtém o valor RGB do tom de pele correspondente
+    valor_rgb = list(dicionario_cores.values())[indice_tom_pele]
 
-    return tom_pele
+    return valor_rgb
 
 # Carregar imagem
-imagem = cv2.imread('teste_1.jpeg')
+imagem = cv2.imread('teste_3.jpeg')
 
 # Converter a imagem para escala de cinza
 imagem_cinza = cv2.cvtColor(imagem, cv2.COLOR_BGR2GRAY)
@@ -68,31 +84,19 @@ cv2.imshow('Rostos detectados', imagem)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
-
-
-# Converter a imagem para o espaço de cores HSV
-imagem_hsv = cv2.cvtColor(imagem, cv2.COLOR_BGR2HSV)
-
-# Definir os intervalos de valores de H, S e V para a cor da pele
-h_min = 0
-h_max = 20
-s_min = 48
-s_max = 255
-v_min = 80
-v_max = 255
-
-# Criar uma máscara binária para filtrar os pixels de pele
-mascara = cv2.inRange(imagem_hsv, (h_min, s_min, v_min), (h_max, s_max, v_max))
-
-# Aplicar a máscara na imagem original para obter a região de pele
-imagem_pele = cv2.bitwise_and(imagem, imagem, mask=mascara)
-
-# Exibir a imagem da região de pele
-cv2.imshow('Região de Pele', imagem_pele)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-
 # Encontra o tom de pele da região de pele
-tom_pele = encontrar_tom_de_pele(imagem_pele)
+valor_rgb_tom_pele = encontrar_tom_de_pele(imagem)
 
-print('Tom de pele:', tom_pele)
+print('Valor RGB do tom de pele:', valor_rgb_tom_pele)
+
+
+pergunta = f"Com base no tom de pele {valor_rgb_tom_pele}, responda com a seguinte estrutura:" \
+            \
+            "Tom de pele: [nome do tom de pele]" \
+            "Com base na estação atual [estação atual do brasil], as cores que podem melhor funcionar bem em uma paleta de cores são: "
+           
+
+
+resposta_gpt = obter_resposta_gpt(pergunta)
+
+print("Resposta do GPT:", resposta_gpt)
